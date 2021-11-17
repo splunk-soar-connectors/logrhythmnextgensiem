@@ -17,15 +17,15 @@
 # Python 3 Compatibility imports
 from __future__ import print_function, unicode_literals
 
+import json
+from datetime import datetime, timedelta
+
 # Phantom App imports
 import phantom.app as phantom
-from phantom.action_result import ActionResult
-from phantom.base_connector import BaseConnector
-
-import json
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
+from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
 
 from logrhythmnextgensiem_consts import *
 
@@ -436,9 +436,10 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
 
 
 def main():
-    import pudb
     import argparse
     import sys
+
+    import pudb
 
     pudb.set_trace()
 
