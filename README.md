@@ -18,9 +18,9 @@ Important notes
 *   This app is compatible with Phantom **5.0.0+**
 
 **Port Information**
-    - The app uses HTTP/ HTTPS protocol for communicating with the ServiceNow server. Below are the default ports used by Splunk SOAR.
+*  The app uses HTTP/ HTTPS protocol for communicating with the LogRhythm NextGen SIEM server. Below are the default ports used by Splunk SOAR.
 
-    Service Name | Transport Protocol | Port
+    SERVICE NAME | TRANSPORT PROTOCOL | PORT
     ------------ | ------------------ | ----
-    **http** | tcp | 80
-    **https** | tcp | 443
+    http | tcp | 80
+    https | tcp | 443

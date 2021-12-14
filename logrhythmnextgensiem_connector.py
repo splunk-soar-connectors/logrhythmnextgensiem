@@ -52,15 +52,17 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         self._base_url = None
 
     def _get_error_message_from_exception(self, e):
-        """ This method is used to get appropriate error messages from the exception.
+        """
+        Get appropriate error message from the exception.
         :param e: Exception object
         :return: error message
         """
 
-        error_code = LOGRHYTHM_ERR_CODE_MSG
+        error_code = None
         error_msg = LOGRHYTHM_ERR_MSG_UNAVAILABLE
+
         try:
-            if e.args:
+            if hasattr(e, "args"):
                 if len(e.args) > 1:
                     error_code = e.args[0]
                     error_msg = e.args[1]
@@ -69,7 +71,12 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         except:
             pass
 
-        return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+        if not error_code:
+            error_text = "Error Message: {}".format(error_msg)
+        else:
+            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_msg)
+
+        return error_text
 
     def _validate_integer(self, action_result, parameter, key):
         """
@@ -78,7 +85,6 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         :param action_result: Action result or BaseConnector object
         :param parameter: input parameter
         :param key: input parameter message key
-        :allow_zero: whether zero should be considered as valid value or not
         :return: status phantom.APP_ERROR/phantom.APP_SUCCESS, integer value of the parameter or None in case of failure
         """
         if parameter is not None:
@@ -345,7 +351,8 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
                 if phantom.is_fail(ret_val):
                     return action_result.set_status(phantom.APP_ERROR, message)
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "Error occurred while polling the data. {}".format(self._get_error_message_from_exception(e)))
+            return action_result.set_status(phantom.APP_ERROR, "Error occurred while polling the data. {}".format(
+                self._get_error_message_from_exception(e)))
 
         if not self.is_poll_now() and len(alarms) == int(params["count"]):
             self._state['last_time'] = (datetime.strptime(alarms[-1]['dateInserted'],
@@ -479,15 +486,6 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
 
         # get the asset config
         config = self.get_config()
-        """
-        # Access values in asset config by the name
-
-        # Required values can be accessed directly
-        required_config_name = config['required_config_name']
-
-        # Optional values should use the .get() function
-        optional_config_name = config.get('optional_config_name')
-        """
 
         self._headers = {
             'Authorization': 'Bearer {}'.format(config['api_key']),

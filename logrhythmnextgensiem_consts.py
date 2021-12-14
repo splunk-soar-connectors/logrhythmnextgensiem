@@ -30,7 +30,6 @@ LOGRHYTHM_STATE_FILE_CORRUPT_ERR = "Error occurred while loading the state file 
      Resetting the state file with the default format. Please try again."
 
 # constants relating to "get_error_msg_from_exception"
-LOGRHYTHM_ERR_CODE_MSG = "Error code unavailable"
 LOGRHYTHM_ERR_MSG_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or action parameters"
 
 # Constants relating to 'validate_integer'
