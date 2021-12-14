@@ -19,6 +19,7 @@ from __future__ import print_function, unicode_literals
 
 import json
 from datetime import datetime, timedelta
+from urllib.parse import unquote
 
 # Phantom App imports
 import phantom.app as phantom
@@ -50,13 +51,57 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         # modify this as you deem fit.
         self._base_url = None
 
+    def _get_error_message_from_exception(self, e):
+        """ This method is used to get appropriate error messages from the exception.
+        :param e: Exception object
+        :return: error message
+        """
+
+        error_code = LOGRHYTHM_ERR_CODE_MSG
+        error_msg = LOGRHYTHM_ERR_MSG_UNAVAILABLE
+        try:
+            if e.args:
+                if len(e.args) > 1:
+                    error_code = e.args[0]
+                    error_msg = e.args[1]
+                elif len(e.args) == 1:
+                    error_msg = e.args[0]
+        except:
+            pass
+
+        return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+
+    def _validate_integer(self, action_result, parameter, key):
+        """
+        Validate an integer.
+
+        :param action_result: Action result or BaseConnector object
+        :param parameter: input parameter
+        :param key: input parameter message key
+        :allow_zero: whether zero should be considered as valid value or not
+        :return: status phantom.APP_ERROR/phantom.APP_SUCCESS, integer value of the parameter or None in case of failure
+        """
+        if parameter is not None:
+            try:
+                if not float(parameter).is_integer():
+                    return action_result.set_status(phantom.APP_ERROR, VALID_INT_MSG.format(param=key)), None
+
+                parameter = int(parameter)
+            except:
+                return action_result.set_status(phantom.APP_ERROR, VALID_INT_MSG.format(param=key)), None
+
+            if parameter < 0:
+                return action_result.set_status(phantom.APP_ERROR, NON_NEG_INT_MSG.format(param=key)), None
+
+        return phantom.APP_SUCCESS, parameter
+
     def _process_empty_response(self, response, action_result):
-        if response.status_code == 200:
+        if response.status_code == 200 or response.status_code == 204:
             return RetVal(phantom.APP_SUCCESS, {})
 
         return RetVal(
             action_result.set_status(
-                phantom.APP_ERROR, "Empty response and no information in the header"
+                phantom.APP_ERROR, "Status code: {}. Empty response and no information in the header".format(response.status_code)
             ), None
         )
 
@@ -66,6 +111,9 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
 
         try:
             soup = BeautifulSoup(response.text, "html.parser")
+            # Remove the script, style, footer and navigation part from the HTML message
+            for element in soup(["script", "style", "footer", "nav"]):
+                element.extract()
             error_text = soup.text
             split_lines = error_text.split('\n')
             split_lines = [x.strip() for x in split_lines if x.strip()]
@@ -73,9 +121,9 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         except:
             error_text = "Cannot parse error details"
 
-        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code, error_text)
+        message = "Status Code: {0}. Data from server: {1}".format(status_code, error_text)
 
-        message = message.replace(u'{', '{{').replace(u'}', '}}')
+        message = message.replace('{', '{{').replace('}', '}}')
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _process_json_response(self, r, action_result):
@@ -85,7 +133,7 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         except Exception as e:
             return RetVal(
                 action_result.set_status(
-                    phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(str(e))
+                    phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(self._get_error_message_from_exception(e))
                 ), None
             )
 
@@ -152,7 +200,7 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
             )
 
         # Create a URL to connect to
-        url = self._base_url + endpoint
+        url = "{}{}".format(self._base_url, endpoint)
 
         try:
             r = request_func(
@@ -165,7 +213,7 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         except Exception as e:
             return RetVal(
                 action_result.set_status(
-                    phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))
+                    phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(unquote(self._get_error_message_from_exception(e)))
                 ), resp_json
             )
 
@@ -179,7 +227,7 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         ret_val, response = self._make_rest_call(LOGRHYTHM_ALARMS_API, action_result, params=None)
 
         if phantom.is_fail(ret_val):
-            self.save_progress("Test Connectivity Failed.")
+            self.save_progress("Test Connectivity Failed")
             return action_result.get_status()
 
         # Return success
@@ -201,20 +249,36 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         #   4/19/2021 13:00:00
         #   4/19/2021
         #   4/19/2021 3:30
+        ret_val, poll_now_ingestion_span = self._validate_integer(
+                action_result, config['poll_now_ingestion_span'], 'poll_now_ingestion_span'
+            )
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+        ret_val, first_scheduled_ingestion_span = self._validate_integer(
+                action_result, config['first_scheduled_ingestion_span'], 'first_scheduled_ingestion_span'
+            )
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+        ret_val, max_alarms = self._validate_integer(
+                action_result, config['max_alarms'], 'max_alarms'
+            )
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
         if self.is_poll_now():
             params["dateInserted"] = (
-                datetime.utcnow() - timedelta(days=int(config['poll_now_ingestion_span']))).strftime(LOGRHYTHM_DATETIME_FORMAT)
+                datetime.utcnow() - timedelta(days=poll_now_ingestion_span)).strftime(LOGRHYTHM_DATETIME_FORMAT)
             # Forcing max alarms returned = max containers specified in dialog
             params["count"] = param[phantom.APP_JSON_CONTAINER_COUNT]
         elif self._state.get('first_run', True):
             self._state['first_run'] = False
-            params["count"] = config['max_alarms']
+            params["count"] = max_alarms
             params["dateInserted"] = (
-                    datetime.utcnow() - timedelta(days=int(config['first_scheduled_ingestion_span']))
+                    datetime.utcnow() - timedelta(days=first_scheduled_ingestion_span)
                 ).strftime(LOGRHYTHM_DATETIME_FORMAT)
             self._state['last_time'] = datetime.utcnow().strftime(LOGRHYTHM_DATETIME_FORMAT)
         else:
-            params["count"] = config['max_alarms']
+            params["count"] = max_alarms
             params["dateInserted"] = self._state['last_time']
             self._state['last_time'] = datetime.utcnow().strftime(LOGRHYTHM_DATETIME_FORMAT)
 
@@ -229,55 +293,59 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
             return action_result.set_status(phantom.APP_SUCCESS, LOGRHYTHM_NOALARMS)
 
         alarms = response.get('alarmsSearchDetails', [])
-        for alarm in alarms:
-            alarm_id = alarm['alarmId']
 
-            container = {}
-            container['name'] = "{0} on {1} at {2}".format(alarm['alarmRuleName'], alarm['entityName'], alarm['dateInserted'])
-            container['description'] = "LogRhythm Alarm ingested by Phantom"
-            container['source_data_identifier'] = alarm_id
+        try:
+            for alarm in alarms:
+                alarm_id = alarm['alarmId']
 
-            ret_val, alarm_resp = self._make_rest_call(
-                LOGRHYTHM_ALARMEVENTS_ENDPOINT.format(alarmid=alarm_id), action_result)
+                container = {}
+                container['name'] = "{0} on {1} at {2}".format(alarm['alarmRuleName'], alarm['entityName'], alarm['dateInserted'])
+                container['description'] = "LogRhythm Alarm ingested by Phantom"
+                container['source_data_identifier'] = alarm_id
 
-            if phantom.is_fail(ret_val):
-                return ret_val
+                ret_val, alarm_resp = self._make_rest_call(
+                    LOGRHYTHM_ALARMEVENTS_ENDPOINT.format(alarmid=alarm_id), action_result)
 
-            artifacts = []
-            for event in alarm_resp.get('alarmsEventDetails', []):
+                if phantom.is_fail(ret_val):
+                    return ret_val
+
+                artifacts = []
+                for event in alarm_resp.get('alarmsEventDetails', []):
+
+                    artifact = {}
+                    artifact['label'] = 'event'
+                    artifact['name'] = event['commonEventName']
+                    artifact['source_data_identifier'] = event['commonEventId']
+
+                    cef = {}
+                    for k, v in event.items():
+                        if v is not None:
+                            cef[k] = v
+
+                    artifact['cef'] = cef
+                    artifacts.append(artifact)
 
                 artifact = {}
-                artifact['label'] = 'event'
-                artifact['name'] = event['commonEventName']
-                artifact['source_data_identifier'] = event['commonEventId']
+                artifact['label'] = 'alarm'
+                artifact['name'] = 'Alarm Info'
+                artifact['source_data_identifier'] = alarm_id
+                artifact['cef_types'] = {'alarmId': ['logrhythm alarm id']}
 
                 cef = {}
-                for k, v in event.items():
+                for k, v in alarm.items():
                     if v is not None:
                         cef[k] = v
 
                 artifact['cef'] = cef
                 artifacts.append(artifact)
+                container['artifacts'] = artifacts
 
-            artifact = {}
-            artifact['label'] = 'alarm'
-            artifact['name'] = 'Alarm Info'
-            artifact['source_data_identifier'] = alarm_id
-            artifact['cef_types'] = {'alarmId': ['logrhythm alarm id']}
+                ret_val, message, container_id = self.save_container(container)
 
-            cef = {}
-            for k, v in alarm.items():
-                if v is not None:
-                    cef[k] = v
-
-            artifact['cef'] = cef
-            artifacts.append(artifact)
-            container['artifacts'] = artifacts
-
-            ret_val, message, container_id = self.save_container(container)
-
-            if phantom.is_fail(ret_val):
-                return action_result.set_status(phantom.APP_ERROR, message)
+                if phantom.is_fail(ret_val):
+                    return action_result.set_status(phantom.APP_ERROR, message)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Error occurred while polling the data. {}".format(self._get_error_message_from_exception(e)))
 
         if not self.is_poll_now() and len(alarms) == int(params["count"]):
             self._state['last_time'] = (datetime.strptime(alarms[-1]['dateInserted'],
@@ -294,17 +362,22 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         endpoint = LOGRHYTHM_ALARM_ENDPOINT.format(alarmid=param['id'])
 
         # rbp = Risk Based Priority (valid values: 0-100)
+        ret_val, rbp = self._validate_integer(
+                action_result, param.get("rbp", 0), 'rbp'
+            )
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
 
         if "status" in param:
-            payload["alarmStatus"] = param.get("status", "")
+            payload["alarmStatus"] = param.get("status")
             if "rbp" in param:
                 # Update both status and rbp
-                payload["rBP"] = param.get("rbp", 0)
+                payload["rBP"] = rbp
         elif "rbp" in param:
             # RBP only to update
-            payload["rBP"] = param.get("rbp", 0)
+            payload["rBP"] = rbp
         elif "comment" in param:
-            payload["alarmComment"] = param.get("comment", "")
+            payload["alarmComment"] = param.get("comment")
             method = "post"
             endpoint += "/comment"
         else:
@@ -334,13 +407,14 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
             return action_result.get_status()
 
         self.save_progress(LOGRHYTHM_OK)
+        alarms_event_details = response.get("alarmsEventDetails", [])
         # Add the response into the data section
-        for event in response["alarmsEventDetails"]:
+        for event in alarms_event_details:
             action_result.add_data(event)
 
         # Add a dictionary that is made up of the most important values from data into the summary
         summary = action_result.update_summary({})
-        summary['num_events'] = len(response['alarmsEventDetails'])
+        summary['num_events'] = len(alarms_event_details)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -358,11 +432,11 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
 
         self.save_progress(LOGRHYTHM_OK)
         # Add the response into the data section
-        action_result.add_data(response["alarmSummaryDetails"])
+        action_result.add_data(response.get("alarmSummaryDetails"))
 
         # Add a dictionary that is made up of the most important values from data into the summary
         summary = action_result.update_summary({})
-        summary['tot_events_summary'] = len(response['alarmSummaryDetails']['alarmEventSummary'])
+        summary['tot_events_summary'] = len(response.get('alarmSummaryDetails', {}).get('alarmEventSummary', []))
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -395,6 +469,13 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         # Load the state in initialize, use it to store data
         # that needs to be accessed across actions
         self._state = self.load_state()
+
+        if not isinstance(self._state, dict):
+            self.debug_print("Resetting the state file with the default format")
+            self._state = {
+                "app_version": self.get_app_json().get('app_version')
+            }
+            return self.set_status(phantom.APP_ERROR, LOGRHYTHM_STATE_FILE_CORRUPT_ERR )
 
         # get the asset config
         config = self.get_config()

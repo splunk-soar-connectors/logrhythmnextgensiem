@@ -26,3 +26,13 @@ LOGRHYTHM_ALARMSUMMARY_ENDPOINT = LOGRHYTHM_ALARMS_API + "/{alarmid}/summary"
 LOGRHYTHM_OK = "Connected successfully to endpoint. Checking returned reply"
 LOGRHYTHM_NOALARMS = "No alarms to ingest"
 LOGRHYTHM_PARAMS_NOTFOUND = "Configuration parameter(s) {params} not found"
+LOGRHYTHM_STATE_FILE_CORRUPT_ERR = "Error occurred while loading the state file due to its unexpected format.\
+     Resetting the state file with the default format. Please try again."
+
+# constants relating to "get_error_msg_from_exception"
+LOGRHYTHM_ERR_CODE_MSG = "Error code unavailable"
+LOGRHYTHM_ERR_MSG_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or action parameters"
+
+# Constants relating to 'validate_integer'
+VALID_INT_MSG = "Please provide a valid integer value in the '{param}' parameter"
+NON_NEG_INT_MSG = "Please provide a valid non-negative integer value in the '{param}' parameter"
