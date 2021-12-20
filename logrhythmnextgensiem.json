@@ -17,8 +17,8 @@
         }
     ],
     "license": "Copyright (c) 2021 Splunk Inc.",
-    "app_version": "1.0.1",
-    "utctime_updated": "2021-11-09T09:00:08.139619Z",
+    "app_version": "1.0.2",
+    "utctime_updated": "2021-12-20T07:43:02.000000Z",
     "package_name": "phantom_logrhythmnextgensiem",
     "main_module": "logrhythmnextgensiem_connector.py",
     "min_phantom_version": "5.0.0",
