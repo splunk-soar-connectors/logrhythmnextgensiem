@@ -1,0 +1,929 @@
+openapi: 3.0.1
+info:
+  title: LogRhythm Alarm API
+  description: This file describes the available endpoints for alarm api.
+  version: 7.7.0
+servers:
+  - url: /lr-alarm-api
+x-servers:
+  - url: http://localhost:8505/lr-alarm-api
+    description: Local API Gateway (https)
+paths:
+  /alarms/{alarmId}:
+    get:
+      summary: Get alarm details by ID
+      tags:
+        - alarms
+      parameters:
+        - in: path
+          name: alarmId
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the Alarm to get
+      responses:
+        '200':
+          description: Returns Alarm detail based on the Alarm Id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAlarm'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          description: A User without correct permission tried to fetch the alarm details.
+        '404':
+          description: alarm not found in database.
+    patch:
+      tags:
+        - alarms
+      parameters:
+        - in: path
+          name: alarmId
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the Alarm to get
+      summary: Update Alarm Status and RBP
+      description: 
+        Update Alarm Status and RBP. Searches existing AlarmId. Returns a 404
+        error if the Id does not exist. Otherwise, updates the AlarmHistory
+        table.
+      requestBody:
+        description: Includes the AlarmId and AlarmComments.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusRBPRequest'
+        required: true
+      responses:
+        '200':
+          description: Returns Status message, status code and response message.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          description: A User without correct permission tried to update the Alarm.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmResponse'
+        '404':
+          description: alarm not found in database.
+      x-codegen-request-body-name: body
+  /alarms/{alarmId}/comment:
+    post:
+      tags:
+        - alarms
+      parameters:
+        - in: path
+          name: alarmId
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the Alarm to get
+      summary: Update Alarm Comments
+      description:
+        Updates AlarmHistory table to add comments in Comments column based on
+        the AlarmId supplied. Searches existing AlarmId. Returns a 404 error if
+        the Id does not exist. Otherwise, updates the AlarmHistory table.
+      operationId: comments
+      requestBody:
+        description: Includes the AlarmId and AlarmComments.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+        required: true
+      responses:
+        '201':
+          description: Returns Status message, status code and response message.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          description: A User without correct permission tried to update the Alarm.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmResponse'
+        '404':
+          description: alarm not found in database.
+      x-codegen-request-body-name: body
+  /alarms/{alarmId}/history:
+    get:
+      summary: Get alarm history details by ID and filter criteria
+      tags:
+        - alarms
+      parameters:
+        - in: path
+          name: alarmId
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the Alarm to get
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description:
+            The number of items to skip before starting to collect the result
+            set
+        - in: query
+          name: count
+          schema:
+            type: integer
+          description: The numbers of items to return
+        - in: query
+          name: orderby
+          schema:
+            type: string
+          description: field name on which we want to sort the result
+        - in: query
+          name: dir
+          schema:
+            type: string
+          description: provide the order direction either ascending or descending
+        - in: query
+          name: personId
+          schema:
+            type: integer
+          description: filter criteria
+        - in: query
+          name: dateUpdated
+          schema:
+            type: string
+          description: filter criteria return value greater than or equal to
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: User can provide comment/status/rbp
+      responses:
+        '200':
+          description: Returns Alarm history detail based on the Alarm Id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmHistory'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          description:
+            A User without correct permission tried to fetch the alarm history
+            details.
+        '404':
+          description: alarm not found in database.
+  /alarms:
+    get:
+      summary: Get alarm details using filter criteria
+      tags:
+        - alarms
+      parameters:
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description:
+            The number of items to skip before starting to collect the result
+            set
+        - in: query
+          name: count
+          schema:
+            type: integer
+          description: The numbers of items to return
+        - in: query
+          name: orderby
+          schema:
+            type: string
+          description:
+            field name (AlarmRuleName, AlarmStatus, DateInserted and entityName)
+            on which user can sort the result
+        - in: query
+          name: dir
+          schema:
+            type: string
+          description: provide the order direction either ascending or descending
+        - in: query
+          name: alarmRuleName
+          schema:
+            type: string
+          description: filter criteria
+        - in: query
+          name: alarmStatus
+          schema:
+            type: string
+          description: filter criteria
+        - in: query
+          name: entityName
+          schema:
+            type: string
+          description: filter criteria
+        - in: query
+          name: Notification
+          schema:
+            type: string
+          description: filter criteria
+        - in: query
+          name: caseAssociation
+          schema:
+            type: string
+          description: filter criteria
+        - in: query
+          name: dateInserted
+          schema:
+            type: string
+          description: get alarms from given insertion date on
+      responses:
+        '200':
+          description: Returns Alarm history detail based on the Alarm Id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmSearch'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          description:
+            A User without correct permission tried to fetch the alarm history
+            details.
+        '404':
+          description: alarm not found in database.
+  /alarms/{alarmId}/summary:
+    get:
+      summary: Get alarm summary by alarmId
+      tags:
+        - alarms
+      parameters:
+        - in: path
+          name: alarmId
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the Alarm to get
+      responses:
+        '200':
+          description: Returns Alarm history detail based on the Alarm Id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          description:
+            A User without correct permission tried to fetch the alarm history
+            details.
+        '404':
+          description: alarm not found in database.
+  /alarms/{alarmId}/events:
+    get:
+      summary: Get events by alarmId
+      tags:
+        - alarms
+      parameters:
+        - in: path
+          name: alarmId
+          schema:
+            type: number
+          required: true
+          description: Numeric ID of the Alarm to get
+      responses:
+        '200':
+          description: Returns Events detail based on the Alarm Id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmEventDetail'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          description:
+            A User without correct permission tried to fetch the alarm history
+            details.
+        '404':
+          description: alarm not found in database.
+components:
+  schemas:
+    AlarmResponse:
+      type: object
+      properties:
+        statusCode:
+          type: number
+        statusMessage:
+          type: string
+        responseMessage:
+          type: string
+    GetAlarm:
+      type: object
+      properties:
+        alarmDetails:
+          $ref: '#/components/schemas/AlarmDetails'
+        statusCode:
+          type: number
+        statusMessage:
+          type: string
+        responseMessage:
+          type: string
+    AlarmDetails:
+      type: object
+      properties:
+        alarmId:
+          type: number
+        personId:
+          type: number
+        entityId:
+          type: number
+        entityName:
+          type: string
+        alarmDate:
+          type: string
+        alarmRuleID:
+          type: number
+        alarmRuleName:
+          type: string
+        alarmStatus:
+          type: string
+          enum:
+            - New = 0
+            - Opened = 1
+            - Working = 2
+            - Escalated = 3
+            - Closed = 4
+            - Closed_FalseAlarm = 5
+            - Closed_Resolved = 6
+            - Closed_Unresolved = 7
+            - Closed_Reported = 8
+            - Closed_Monitor = 9
+        alarmStatusName:
+          type: string
+        lastUpdatedID:
+          type: number
+        lastUpdatedName:
+          type: string
+        dateInserted:
+          type: string
+        dateUpdated:
+          type: string
+        associatedCases:
+          type: array
+          items:
+            type: string
+        lastPersonID:
+          type: number
+        eventCount:
+          type: number
+        eventDateFirst:
+          type: string
+        eventDateLast:
+          type: string
+        rBPMax:
+          type: number
+        rBPAvg:
+          type: number
+        executionTarget:
+          type: number
+        smartResponseActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AmartResponseActions'
+        alarmDataCached:
+          type: string
+    CommentRequest:
+      type: object
+      properties:
+        alarmComment:
+          type: string
+    StatusRBPRequest:
+      type: object
+      properties:
+        alarmStatus:
+          type: string
+          enum:
+            - New
+            - Opened
+            - Working
+            - Escalated
+            - Closed
+            - Closed_FalseAlarm
+            - Closed_Resolved
+            - Closed_Unresolved
+            - Closed_Reported
+            - Closed_Monitor
+        rBP:
+          type: number
+          description: rbp must be in between 0 - 100
+    AlarmHistory:
+      type: object
+      properties:
+        statusCode:
+          type: number
+        statusMessage:
+          type: string
+        responseMessage:
+          type: string
+        AlarmHistoryDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmHistoryCollection'
+    AlarmSearch:
+      type: object
+      properties:
+        alarmsSearchDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmsSearchDetails'
+        statusCode:
+          type: number
+        statusMessage:
+          type: string
+        responseMessage:
+          type: string
+    AlarmsSearchDetails:
+      type: object
+      properties:
+        alarmId:
+          type: number
+        alarmRuleName:
+          type: string
+        alarmStatus:
+          type: string
+        alarmDataCached:
+          type: string
+        associatedCases:
+          type: array
+          items:
+            type: string
+        entityName:
+          type: string
+        dateInserted:
+          type: string
+    AlarmSummary:
+      type: object
+      properties:
+        alarmSummaryDetails:
+          $ref: '#/components/schemas/AlarmSummaryDetails'
+        statusCode:
+          type: number
+        statusMessage:
+          type: string
+        responseMessage:
+          type: string
+    AmartResponseActions:
+      type: object
+      properties:
+        srpName:
+          type: string
+        executionTime:
+          type: number
+        actionStatus:
+          type: number
+        approvalLevel1Status:
+          type: number
+        approvalLevel2Status:
+          type: number
+        approvalLevel3Status:
+          type: number
+        standardOut:
+          type: string
+        standardError:
+          type: string
+        executionTarget:
+          type: string
+        smartResponseAgentId:
+          type: number
+    AlarmSummaryDetails:
+      type: object
+      properties:
+        dateInserted:
+          type: string
+        rbpMax:
+          type: number
+        rbpAvg:
+          type: number
+        alarmRuleId:
+          type: number
+        alarmRuleGroup:
+          type: string
+        briefDescription:
+          type: string
+        additionalDetails:
+          type: string
+        alarmEventSummary:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmEventSummary'
+    AlarmEventSummary:
+      type: object
+      properties:
+        msgClassId:
+          type: number
+        msgClassName:
+          type: string
+        commonEventId:
+          type: number
+        commonEventName:
+          type: string
+        originHostId:
+          type: number
+        impactedHostId:
+          type: string
+        originUser:
+          type: string
+        impactedUser:
+          type: string
+        originUserIdentityId:
+          type: number
+        impactedUserIdentityId:
+          type: number
+        originUserIdentityName:
+          type: string
+        impactedUserIdentityName:
+          type: string
+        originEntityName:
+          type: string
+        impactedEntityName:
+          type: string
+    AlarmHistoryCollection:
+      type: object
+      properties:
+        alarmId:
+          type: number
+        personId:
+          type: number
+        comments:
+          type: string
+        dateUpdated:
+          type: string
+        dateInserted:
+          type: string
+    AlarmEventDetail:
+      type: object
+      properties:
+        alarmsEventDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventDetail'
+        statusCode:
+          type: number
+        statusMessage:
+          type: string
+        responseMessage:
+          type: string
+    EventDetail:
+      type: object
+      properties:
+        account:
+          type: string
+        action:
+          type: string
+        amount:
+          type: number
+        bytesIn:
+          type: string
+        bytesOut:
+          type: string
+        classificationId:
+          type: number
+        classificationName:
+          type: string
+        classificationTypeName:
+          type: string
+        command:
+          type: string
+        commonEventId:
+          type: number
+        cve:
+          type: string
+        commonEventName:
+          type: string
+        count:
+          type: number
+        directionId:
+          type: number
+        directionName:
+          type: string
+        domain:
+          type: string
+        duration:
+          type: number
+        entityId:
+          type: number
+        entityName:
+          type: string
+        group:
+          type: string
+        impactedEntityId:
+          type: number
+        impactedEntityName:
+          type: string
+        impactedHostId:
+          type: number
+        impactedHostName:
+          type: string
+        impactedInterface:
+          type: string
+        impactedIP:
+          type: string
+        impactedLocation:
+          $ref: '#/components/schemas/ImpactedLocation'
+        impactedMAC:
+          type: string
+        impactedName:
+          type: string
+        impactedNATIP:
+          type: string
+        impactedNATPort:
+          type: string
+        impactedNetwork:
+          $ref: '#/components/schemas/ImpactedNetwork'
+        impactedPort:
+          type: number
+        impactedZone:
+          type: string
+        itemsPacketsIn:
+          type: number
+        itemsPacketsOut:
+          type: number
+        logDate:
+          type: string
+        login:
+          type: string
+        logMessage:
+          type: string
+        logSourceHostId:
+          type: number
+        logSourceHostName:
+          type: string
+        logSourceName:
+          type: string
+        logSourceTypeName:
+          type: string
+        messageId:
+          type: number
+        mpeRuleId:
+          type: number
+        mpeRuleName:
+          type: string
+        normalDateMax:
+          type: string
+        objectName:
+          type: string
+        objectType:
+          type: string
+        originEntityId:
+          type: number
+        originEntityName:
+          type: string
+        originHostId:
+          type: number
+        originHostName:
+          type: string
+        originInterface:
+          type: string
+        originIP:
+          type: string
+        originLocation:
+          $ref: '#/components/schemas/OriginLocation'
+        originMAC:
+          type: string
+        originName:
+          type: string
+        originNATIP:
+          type: string
+        originNATPort:
+          type: string
+        originNetwork:
+          $ref: '#/components/schemas/OriginNetwork'
+        originPort:
+          type: number
+        originZone:
+          type: string
+        parentProcessId:
+          type: string
+        parentProcessName:
+          type: string
+        parentProcessPath:
+          type: string
+        policy:
+          type: string
+        priority:
+          type: number
+        process:
+          type: string
+        processId:
+          type: number
+        protocolId:
+          type: number
+        protocolName:
+          type: string
+        quantity:
+          type: number
+        rate:
+          type: number
+        reason:
+          type: string
+        recipient:
+          type: string
+        result:
+          type: string
+        responseCode:
+          type: string
+        sender:
+          type: string
+        session:
+          type: string
+        sessionType:
+          type: string
+        serialNumber:
+          type: string
+        serviceId:
+          type: number
+        serviceName:
+          type: string
+        severity:
+          type: string
+        status:
+          type: string
+        size:
+          type: number
+        subject:
+          type: string
+        threatId:
+          type: string
+        threatName:
+          type: string
+        url:
+          type: string
+        userAgent:
+          type: string
+        vendorInfo:
+          type: string
+        vendorMsgId:
+          type: number
+        version:
+          type: string
+        originUserIdentityName:
+          type: string
+        impactedUserIdentityName:
+          type: string
+        originUserIdentityId:
+          type: number
+        impactedUserIdentityId:
+          type: number
+        senderIdentityId:
+          type: number
+        senderIdentityName:
+          type: string
+        recipientIdentityId:
+          type: number
+        recipientIdentityName:
+          type: string
+    ImpactedLocation:
+      type: object
+      properties:
+        countryCode:
+          type: string
+        name:
+          type: string
+        latitude:
+          type: number
+        locationId:
+          type: number
+        locationKey:
+          type: string
+        longitude:
+          type: number
+        parentLocationId:
+          type: number
+        recordStatus:
+          type: string
+        regionCode:
+          type: string
+        type:
+          type: string
+        dateUpdated:
+          type: string
+    ImpactedNetwork:
+      type: object
+      properties:
+        beginIPRange:
+          $ref: '#/components/schemas/BeginIPRange'
+        dateUpdated:
+          type: string
+        riskThreshold:
+          type: string
+        endIPRange:
+          $ref: '#/components/schemas/EndIPRange'
+        entityId:
+          type: number
+        hostZone:
+          type: string
+        locationId:
+          type: number
+        longDesc:
+          type: string
+        name:
+          type: string
+        networkId:
+          type: number
+        recordStatus:
+          type: string
+        shortDesc:
+          type: string
+    BeginIPRange:
+      type: object
+      properties:
+        value:
+          type: string
+    EndIPRange:
+      type: object
+      properties:
+        value:
+          type: string
+    OriginLocation:
+      type: object
+      properties:
+        countryCode:
+          type: string
+        name:
+          type: string
+        latitude:
+          type: number
+        locationId:
+          type: number
+        locationKey:
+          type: string
+        longitude:
+          type: number
+        parentLocationId:
+          type: number
+        recordStatus:
+          type: string
+        regionCode:
+          type: string
+        type:
+          type: string
+        dateUpdated:
+          type: string
+    OriginNetwork:
+      type: object
+      properties:
+        beginIPRange:
+          $ref: '#/components/schemas/BeginIPRange'
+        dateUpdated:
+          type: string
+        riskThreshold:
+          type: string
+        endIPRange:
+          $ref: '#/components/schemas/EndIPRange'
+        entityId:
+          type: number
+        hostZone:
+          type: string
+        locationId:
+          type: number
+        longDesc:
+          type: string
+        name:
+          type: string
+        networkId:
+          type: number
+        recordStatus:
+          type: string
+        shortDesc:
+          type: string
