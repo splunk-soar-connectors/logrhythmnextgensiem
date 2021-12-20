@@ -1,8 +1,7 @@
-[comment]: # "Auto-generated SOAR connector documentation"
 # LogRhythm NextGen SIEM
 
 Publisher: Splunk Community  
-Connector Version: 1\.0\.1  
+Connector Version: 1\.0\.3  
 Product Vendor: LogRhythm  
 Product Name: LogRhythm NextGen SIEM  
 Product Version Supported (regex): "\.\*"  
