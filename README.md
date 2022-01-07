@@ -1,3 +1,4 @@
+[comment]: # "Auto-generated SOAR connector documentation"
 # LogRhythm NextGen SIEM
 
 Publisher: Splunk Community  
