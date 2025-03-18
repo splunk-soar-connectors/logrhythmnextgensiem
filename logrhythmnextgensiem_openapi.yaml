@@ -49,7 +49,7 @@ paths:
           required: true
           description: Numeric ID of the Alarm to get
       summary: Update Alarm Status and RBP
-      description: 
+      description:
         Update Alarm Status and RBP. Searches existing AlarmId. Returns a 404
         error if the Id does not exist. Otherwise, updates the AlarmHistory
         table.
