@@ -16,7 +16,7 @@
             "name": "Erica Pescio"
         }
     ],
-    "license": "Copyright (c) 2021 Splunk Inc.",
+    "license": "Copyright (c) 2021-2025 Splunk Inc.",
     "app_version": "1.0.3",
     "utctime_updated": "2021-12-20T14:05:27.000000Z",
     "package_name": "phantom_logrhythmnextgensiem",
