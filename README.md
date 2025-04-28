@@ -1,7 +1,7 @@
 # LogRhythm NextGen SIEM
 
 Publisher: Splunk Community \
-Connector Version: 1.0.3 \
+Connector Version: 1.0.4 \
 Product Vendor: LogRhythm \
 Product Name: LogRhythm NextGen SIEM \
 Minimum Product Version: 5.0.0
