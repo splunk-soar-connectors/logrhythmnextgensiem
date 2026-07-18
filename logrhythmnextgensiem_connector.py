@@ -197,7 +197,7 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         url = f"{self._base_url}{endpoint}"
 
         try:
-            r = request_func(url, verify=config.get("verify_server_cert", False), headers=self._headers, proxies=self._proxies, **kwargs)
+            r = request_func(url, verify=config.get("verify_server_cert", True), headers=self._headers, proxies=self._proxies, **kwargs)
         except Exception as e:
             return RetVal(
                 action_result.set_status(
