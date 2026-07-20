@@ -1,6 +1,6 @@
 # File: logrhythmnextgensiem_connector.py
 #
-# Copyright (c) 2021-2025 Splunk Inc.
+# Copyright (c) 2021-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -197,7 +197,7 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         url = f"{self._base_url}{endpoint}"
 
         try:
-            r = request_func(url, verify=config.get("verify_server_cert", False), headers=self._headers, proxies=self._proxies, **kwargs)
+            r = request_func(url, verify=config.get("verify_server_cert", True), headers=self._headers, proxies=self._proxies, **kwargs)
         except Exception as e:
             return RetVal(
                 action_result.set_status(
@@ -338,9 +338,13 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
+        ret_val, alarm_id = self._validate_integer(action_result, param["id"], "id")
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
         payload = {}
         method = "patch"
-        endpoint = LOGRHYTHM_ALARM_ENDPOINT.format(alarmid=param["id"])
+        endpoint = LOGRHYTHM_ALARM_ENDPOINT.format(alarmid=alarm_id)
 
         # rbp = Risk Based Priority (valid values: 0-100)
         ret_val, rbp = self._validate_integer(action_result, param.get("rbp", 0), "rbp")
@@ -377,8 +381,12 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
+        ret_val, alarm_id = self._validate_integer(action_result, param["id"], "id")
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
         # make rest call
-        ret_val, response = self._make_rest_call(LOGRHYTHM_ALARMEVENTS_ENDPOINT.format(alarmid=param["id"]), action_result, params=None)
+        ret_val, response = self._make_rest_call(LOGRHYTHM_ALARMEVENTS_ENDPOINT.format(alarmid=alarm_id), action_result, params=None)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()
@@ -399,8 +407,12 @@ class LogrhythmNextgenSiemConnector(BaseConnector):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
+        ret_val, alarm_id = self._validate_integer(action_result, param["id"], "id")
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
         # make rest call
-        ret_val, response = self._make_rest_call(LOGRHYTHM_ALARMSUMMARY_ENDPOINT.format(alarmid=param["id"]), action_result, params=None)
+        ret_val, response = self._make_rest_call(LOGRHYTHM_ALARMSUMMARY_ENDPOINT.format(alarmid=alarm_id), action_result, params=None)
 
         if phantom.is_fail(ret_val):
             return action_result.get_status()

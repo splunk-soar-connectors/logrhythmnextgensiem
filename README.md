@@ -1,9 +1,9 @@
 # LogRhythm NextGen SIEM
 
-Publisher: Splunk Community \
-Connector Version: 1.0.4 \
-Product Vendor: LogRhythm \
-Product Name: LogRhythm NextGen SIEM \
+Publisher: Splunk Community <br>
+Connector Version: 1.0.4 <br>
+Product Vendor: LogRhythm <br>
+Product Name: LogRhythm NextGen SIEM <br>
 Minimum Product Version: 5.0.0
 
 This app supports ingestion and several investigative actions on LogRhythm NextGen SIEM
@@ -23,17 +23,17 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration \
-[on poll](#action-on-poll) - Ingest alarms from LogRhythm \
-[update alarm](#action-update-alarm) - Update an alarm \
-[get events](#action-get-events) - Get an alarm's events \
+[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration <br>
+[on poll](#action-on-poll) - Ingest alarms from LogRhythm <br>
+[update alarm](#action-update-alarm) - Update an alarm <br>
+[get events](#action-get-events) - Get an alarm's events <br>
 [get summary](#action-get-summary) - Get an alarm's summary
 
 ## action: 'test connectivity'
 
 Validate the asset configuration for connectivity using supplied configuration
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -48,7 +48,7 @@ No Output
 
 Ingest alarms from LogRhythm
 
-Type: **ingest** \
+Type: **ingest** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -69,7 +69,7 @@ No Output
 
 Update an alarm
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -100,7 +100,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Get an alarm's events
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -207,7 +207,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Get an alarm's summary
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -252,7 +252,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
